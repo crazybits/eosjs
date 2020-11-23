@@ -42,6 +42,7 @@ export class Api {
 
     /** Identifies chain */
     public chainId: string;
+    public requiredKeys: string[];
 
     public textEncoder: TextEncoder;
     public textDecoder: TextDecoder;
@@ -74,6 +75,7 @@ export class Api {
         abiProvider?: AbiProvider,
         signatureProvider: SignatureProvider,
         chainId?: string,
+        requiredKeys?: string[],
         textEncoder?: TextEncoder,
         textDecoder?: TextDecoder,
     }) {
@@ -82,6 +84,7 @@ export class Api {
         this.abiProvider = args.abiProvider || args.rpc;
         this.signatureProvider = args.signatureProvider;
         this.chainId = args.chainId;
+        this.requiredKeys = args.requiredKeys;
         this.textEncoder = args.textEncoder;
         this.textDecoder = args.textDecoder;
 
@@ -291,12 +294,15 @@ export class Api {
             this.chainId = info.chain_id;
         }
 
-        if ((typeof blocksBehind === 'number' || useLastIrreversible) && expireSeconds) {
-            transaction = await this.generateTapos(info, transaction, blocksBehind, useLastIrreversible, expireSeconds);
-        }
+        if (!transaction.ref_block_num || !transaction.ref_block_prefix || !transaction.expiration) {
+            if ((typeof blocksBehind === 'number' || useLastIrreversible) && expireSeconds) {
+                transaction = await this.generateTapos(info, transaction, blocksBehind, useLastIrreversible, expireSeconds);
+            }
 
-        if (!this.hasRequiredTaposFields(transaction)) {
-            throw new Error('Required configuration or TAPOS fields are not present');
+            if (!this.hasRequiredTaposFields(transaction)) {
+                throw new Error('Required configuration or TAPOS fields are not present');
+            }
+
         }
 
         const abis: BinaryAbi[] = await this.getTransactionAbis(transaction);
@@ -313,7 +319,13 @@ export class Api {
 
         if (sign) {
             const availableKeys = await this.signatureProvider.getAvailableKeys();
-            const requiredKeys = await this.authorityProvider.getRequiredKeys({ transaction, availableKeys });
+            let requiredKeys;
+            if (!this.requiredKeys) {
+                requiredKeys = await this.authorityProvider.getRequiredKeys({ transaction, availableKeys });
+            } else {
+                requiredKeys = this.requiredKeys
+            }
+
             pushTransactionArgs = await this.signatureProvider.sign({
                 chainId: this.chainId,
                 requiredKeys,
@@ -381,11 +393,10 @@ export class Api {
 
     // eventually break out into TransactionValidator class
     private hasRequiredTaposFields({ expiration, ref_block_num, ref_block_prefix }: any): boolean {
-        return !!(expiration && typeof(ref_block_num) === 'number' && typeof(ref_block_prefix) === 'number');
+        return !!(expiration && typeof (ref_block_num) === 'number' && typeof (ref_block_prefix) === 'number');
     }
 
-    private async tryGetBlockHeaderState(taposBlockNumber: number): Promise<GetBlockHeaderStateResult | GetBlockResult>
-    {
+    private async tryGetBlockHeaderState(taposBlockNumber: number): Promise<GetBlockHeaderStateResult | GetBlockResult> {
         try {
             return await this.rpc.get_block_header_state(taposBlockNumber);
         } catch (error) {
