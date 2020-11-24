@@ -147,7 +147,8 @@ export class Api {
 
     /** Get abis needed by a transaction */
     public async getTransactionAbis(transaction: any, reload = false): Promise<BinaryAbi[]> {
-        const actions = (transaction.context_free_actions || []).concat(transaction.actions);
+        //const actions = (transaction.context_free_actions || []).concat(transaction.actions);
+        const actions = transaction.actions;
         const accounts: string[] = actions.map((action: ser.Action): string => action.account);
         const uniqueAccounts: Set<string> = new Set(accounts);
         const actionPromises: Promise<BinaryAbi>[] = [...uniqueAccounts].map(
@@ -308,7 +309,8 @@ export class Api {
         const abis: BinaryAbi[] = await this.getTransactionAbis(transaction);
         transaction = {
             ...transaction,
-            context_free_actions: await this.serializeActions(transaction.context_free_actions || []),
+            //context_free_actions: await this.serializeActions(transaction.context_free_actions || []),
+            context_free_actions: transaction.context_free_actions,
             actions: await this.serializeActions(transaction.actions)
         };
         const serializedTransaction = this.serializeTransaction(transaction);
