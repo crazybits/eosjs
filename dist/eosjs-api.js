@@ -193,7 +193,7 @@ var Api = /** @class */ (function () {
             var actions, accounts, uniqueAccounts, actionPromises;
             var _this = this;
             return __generator(this, function (_a) {
-                actions = (transaction.context_free_actions || []).concat(transaction.actions);
+                actions = transaction.actions;
                 accounts = actions.map(function (action) { return action.account; });
                 uniqueAccounts = new Set(accounts);
                 actionPromises = __spread(uniqueAccounts).map(function (account) { return __awaiter(_this, void 0, void 0, function () {
@@ -424,12 +424,11 @@ var Api = /** @class */ (function () {
                     case 6:
                         abis = _g.sent();
                         _e = [__assign({}, transaction)];
-                        _f = {};
-                        return [4 /*yield*/, this.serializeActions(transaction.context_free_actions || [])];
-                    case 7:
-                        _f.context_free_actions = _g.sent();
+                        _f = { 
+                            //context_free_actions: await this.serializeActions(transaction.context_free_actions || []),
+                            context_free_actions: transaction.context_free_actions };
                         return [4 /*yield*/, this.serializeActions(transaction.actions)];
-                    case 8:
+                    case 7:
                         transaction = __assign.apply(void 0, _e.concat([(_f.actions = _g.sent(), _f)]));
                         serializedTransaction = this.serializeTransaction(transaction);
                         serializedContextFreeData = this.serializeContextFreeData(transaction.context_free_data);
@@ -437,30 +436,30 @@ var Api = /** @class */ (function () {
                             serializedTransaction: serializedTransaction, serializedContextFreeData: serializedContextFreeData,
                             signatures: []
                         };
-                        if (!sign) return [3 /*break*/, 14];
+                        if (!sign) return [3 /*break*/, 13];
                         return [4 /*yield*/, this.signatureProvider.getAvailableKeys()];
-                    case 9:
+                    case 8:
                         availableKeys = _g.sent();
                         requiredKeys = void 0;
-                        if (!!this.requiredKeys) return [3 /*break*/, 11];
+                        if (!!this.requiredKeys) return [3 /*break*/, 10];
                         return [4 /*yield*/, this.authorityProvider.getRequiredKeys({ transaction: transaction, availableKeys: availableKeys })];
-                    case 10:
+                    case 9:
                         requiredKeys = _g.sent();
-                        return [3 /*break*/, 12];
-                    case 11:
+                        return [3 /*break*/, 11];
+                    case 10:
                         requiredKeys = this.requiredKeys;
-                        _g.label = 12;
-                    case 12: return [4 /*yield*/, this.signatureProvider.sign({
+                        _g.label = 11;
+                    case 11: return [4 /*yield*/, this.signatureProvider.sign({
                             chainId: this.chainId,
                             requiredKeys: requiredKeys,
                             serializedTransaction: serializedTransaction,
                             serializedContextFreeData: serializedContextFreeData,
                             abis: abis,
                         })];
-                    case 13:
+                    case 12:
                         pushTransactionArgs = _g.sent();
-                        _g.label = 14;
-                    case 14:
+                        _g.label = 13;
+                    case 13:
                         if (broadcast) {
                             if (compression) {
                                 return [2 /*return*/, this.pushCompressedSignedTransaction(pushTransactionArgs)];
