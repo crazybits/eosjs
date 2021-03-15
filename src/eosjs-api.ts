@@ -327,7 +327,6 @@ export class Api {
             } else {
                 requiredKeys = this.requiredKeys
             }
-
             pushTransactionArgs = await this.signatureProvider.sign({
                 chainId: this.chainId,
                 requiredKeys,
